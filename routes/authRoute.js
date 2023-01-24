@@ -2,7 +2,7 @@ const router = require("express").Router();
 const authController = require('../controllers/authController')
 
 // GET ROUTTES
-// router.get("/users", authController.getUser);
+router.get("/logout", authController.logout);
 
 // POST ROUTES
 router.post('/register', authController.registerUser)

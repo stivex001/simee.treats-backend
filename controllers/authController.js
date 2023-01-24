@@ -1,7 +1,7 @@
 const User = require("../models/User");
 const asyncHandler = require("express-async-handler");
 const jwt = require("jsonwebtoken");
-const bcrypt= require('bcryptjs')
+const bcrypt = require("bcryptjs");
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "1d" });
@@ -42,14 +42,14 @@ exports.registerUser = asyncHandler(async (req, res, next) => {
   //   generate a token
   const token = generateToken(user._id);
 
-//   Send HTTP-only cookie   
-  res.cookie('token', token, {
-    path: '/',
+  //   Send HTTP-only cookie
+  res.cookie("token", token, {
+    path: "/",
     httpOnly: true,
     expires: new Date(Date.now() + 1000 * 86400), // 1 day
-    sameSite: 'none',
-    secure: true
-  })
+    sameSite: "none",
+    secure: true,
+  });
 
   if (user) {
     const { _id, email, username } = user;
@@ -65,38 +65,60 @@ exports.registerUser = asyncHandler(async (req, res, next) => {
   }
 });
 
-exports.loginUser = asyncHandler(async(req, res, next) => {
-  const {username, password} = req.body;
+exports.loginUser = asyncHandler(async (req, res, next) => {
+  const { username, password } = req.body;
 
-//   Validate Request
+  //   Validate Request
 
-if (!username || !password) {
+  if (!username || !password) {
     res.status(400);
     throw new Error("Please Add userName and password");
-}
+  }
 
-//  check if user exists
+  //  check if user exists
 
-const user = await User.findOne({username})
-if(!user) {
+  const user = await User.findOne({ username });
+  if (!user) {
     res.status(400);
     throw new Error("oops! User not found");
-}
+  }
 
-// User exists, check if password is correct
-const passwordMatch = await bcrypt.compare(password, user.password)
+  // User exists, check if password is correct
+  const passwordMatch = await bcrypt.compare(password, user.password);
 
-if (user && passwordMatch) {
-    const {_id, username, email} = user
+  //   generate a token
+  const token = generateToken(user._id);
+
+  //   Send HTTP-only cookie
+  res.cookie("token", token, {
+    path: "/",
+    httpOnly: true,
+    expires: new Date(Date.now() + 1000 * 86400), // 1 day
+    sameSite: "none",
+    secure: true,
+  });
+
+  if (user && passwordMatch) {
+    const { _id, username, email } = user;
     res.status(200).json({
-        _id,
-        username,
-        email
-    })
-}
-else {
+      _id,
+      username,
+      email,
+      token,
+    });
+  } else {
     res.status(400);
-    throw new Error("Invalid Credientials"); 
-}
+    throw new Error("Invalid Credientials");
+  }
+});
 
+exports.logout = asyncHandler(async (req, res) => {
+    res.cookie("token", "", {
+        path: "/",
+        httpOnly: true,
+        expires: new Date(0),
+        sameSite: "none",
+        secure: true,
+      });
+      return res.status(200).json({message: "You've logged out successfully "})
 });
