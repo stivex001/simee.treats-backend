@@ -2,6 +2,10 @@ const express = require("express");
 const dotenv = require("dotenv");
 const app = express();
 const authRoute = require('./routes/authRoute')
+const productRoute = require('./routes/productRoute')
+const orderRoute = require('./routes/orderRoute')
+const cartRoute = require('./routes/cartRoute')
+
 
 // initialize dotenv
 dotenv.config();
@@ -25,6 +29,9 @@ mongoose
 
 //   Routes
 app.use(authRoute)
+app.use('/api/v1', productRoute)
+app.use('/api/v1', orderRoute)
+app.use('/api/v1', cartRoute)
 
 // connecting to localserver
 const port = process.env.PORT || 5000;
