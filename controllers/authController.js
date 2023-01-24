@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const asyncHandler = require("express-async-handler");
 const jwt = require("jsonwebtoken");
+const bcrypt= require('bcryptjs')
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "1d" });
@@ -65,5 +66,37 @@ exports.registerUser = asyncHandler(async (req, res, next) => {
 });
 
 exports.loginUser = asyncHandler(async(req, res, next) => {
-  
+  const {username, password} = req.body;
+
+//   Validate Request
+
+if (!username || !password) {
+    res.status(400);
+    throw new Error("Please Add userName and password");
+}
+
+//  check if user exists
+
+const user = await User.findOne({username})
+if(!user) {
+    res.status(400);
+    throw new Error("oops! User not found");
+}
+
+// User exists, check if password is correct
+const passwordMatch = await bcrypt.compare(password, user.password)
+
+if (user && passwordMatch) {
+    const {_id, username, email} = user
+    res.status(200).json({
+        _id,
+        username,
+        email
+    })
+}
+else {
+    res.status(400);
+    throw new Error("Invalid Credientials"); 
+}
+
 });
