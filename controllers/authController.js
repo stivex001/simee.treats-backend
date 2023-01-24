@@ -6,7 +6,7 @@ const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "1d" });
 };
 
-exports.postUser = asyncHandler(async (req, res, next) => {
+exports.registerUser = asyncHandler(async (req, res, next) => {
   const { username, email, password } = req.body;
 
   //  Validation
@@ -41,6 +41,15 @@ exports.postUser = asyncHandler(async (req, res, next) => {
   //   generate a token
   const token = generateToken(user._id);
 
+//   Send HTTP-only cookie   
+  res.cookie('token', token, {
+    path: '/',
+    httpOnly: true,
+    expires: new Date(Date.now() + 1000 * 86400), // 1 day
+    sameSite: 'none',
+    secure: true
+  })
+
   if (user) {
     const { _id, email, username } = user;
     res.status(201).json({
@@ -55,6 +64,6 @@ exports.postUser = asyncHandler(async (req, res, next) => {
   }
 });
 
-exports.getUser = (req, res, next) => {
-  res.send("welcome");
-};
+exports.loginUser = asyncHandler(async(req, res, next) => {
+  
+});
