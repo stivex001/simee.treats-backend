@@ -1,5 +1,10 @@
 const User = require("../models/User");
 const asyncHandler = require("express-async-handler");
+const jwt = require("jsonwebtoken");
+
+const generateToken = (id) => {
+  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "1d" });
+};
 
 exports.postUser = asyncHandler(async (req, res, next) => {
   const { username, email, password } = req.body;
@@ -33,12 +38,16 @@ exports.postUser = asyncHandler(async (req, res, next) => {
     password,
   });
 
+  //   generate a token
+  const token = generateToken(user._id);
+
   if (user) {
     const { _id, email, username } = user;
     res.status(201).json({
       _id,
       username,
       email,
+      token,
     });
   } else {
     res.status(400);
