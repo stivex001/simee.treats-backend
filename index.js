@@ -5,12 +5,15 @@ const authRoute = require('./routes/authRoute')
 const productRoute = require('./routes/productRoute')
 const orderRoute = require('./routes/orderRoute')
 const cartRoute = require('./routes/cartRoute')
+const errorHandler = require("./middlewares/error")
 
 
 // initialize dotenv
 dotenv.config();
 
+// Middleware
 app.use(express.json())
+app.use(express.urlencoded({ extended: false}))
 
 // connecting to Database
 const mongoose = require("mongoose");
@@ -28,10 +31,14 @@ mongoose
   .catch((err) => console.log(err));
 
 //   Routes
-app.use(authRoute)
+app.use('/api/users',authRoute)
 app.use('/api/v1', productRoute)
 app.use('/api/v1', orderRoute)
 app.use('/api/v1', cartRoute)
+
+// Error Middleware
+app.use(errorHandler);
+
 
 // connecting to localserver
 const port = process.env.PORT || 5000;
