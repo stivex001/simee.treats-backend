@@ -3,9 +3,8 @@ const asyncHandler = require("express-async-handler");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "1d" });
-};
+
+// Register User
 
 exports.registerUser = asyncHandler(async (req, res, next) => {
   const { username, email, password } = req.body;
@@ -39,25 +38,12 @@ exports.registerUser = asyncHandler(async (req, res, next) => {
     password,
   });
 
-  //   generate a token
-  const token = generateToken(user._id);
-
-  //   Send HTTP-only cookie
-  res.cookie("token", token, {
-    path: "/",
-    httpOnly: true,
-    expires: new Date(Date.now() + 1000 * 86400), // 1 day
-    sameSite: "none",
-    secure: true,
-  });
-
   if (user) {
     const { _id, email, username } = user;
     res.status(201).json({
       _id,
       username,
       email,
-      token,
     });
   } else {
     res.status(400);
@@ -65,18 +51,18 @@ exports.registerUser = asyncHandler(async (req, res, next) => {
   }
 });
 
+// Login User
+
 exports.loginUser = asyncHandler(async (req, res, next) => {
   const { username, password } = req.body;
 
   //   Validate Request
-
   if (!username || !password) {
     res.status(400);
     throw new Error("Please Add userName and password");
   }
 
   //  check if user exists
-
   const user = await User.findOne({ username });
   if (!user) {
     res.status(400);
@@ -86,25 +72,16 @@ exports.loginUser = asyncHandler(async (req, res, next) => {
   // User exists, check if password is correct
   const passwordMatch = await bcrypt.compare(password, user.password);
 
-  //   generate a token
-  const token = generateToken(user._id);
-
-  //   Send HTTP-only cookie
-  res.cookie("token", token, {
-    path: "/",
-    httpOnly: true,
-    expires: new Date(Date.now() + 1000 * 86400), // 1 day
-    sameSite: "none",
-    secure: true,
-  });
-
   if (user && passwordMatch) {
-    const { _id, username, email } = user;
+    const accessToken = jwt.sign({ id: user._id, isAdmin: user.isAdmin }, process.env.JWT_SECRET, { expiresIn: "1d" })
+   
+    const { _id, username, email, isAdmin } = user;
     res.status(200).json({
       _id,
       username,
       email,
-      token,
+      isAdmin,
+      accessToken
     });
   } else {
     res.status(400);
@@ -113,12 +90,56 @@ exports.loginUser = asyncHandler(async (req, res, next) => {
 });
 
 exports.logout = asyncHandler(async (req, res) => {
-    res.cookie("token", "", {
-        path: "/",
-        httpOnly: true,
-        expires: new Date(0),
-        sameSite: "none",
-        secure: true,
-      });
-      return res.status(200).json({message: "You've logged out successfully "})
+  res.cookie("token", "", {
+    path: "/",
+    httpOnly: true,
+    expires: new Date(0),
+    sameSite: "none",
+    secure: true,
+  });
+  return res.status(200).json({ message: "You've logged out successfully " });
+});
+
+// exports.getUser = asyncHandler(async (req, res, next) => {
+//   const user = await User.findById(req.user._id);
+
+//   if (user) {
+//     const { _id, username, email } = user;
+//     res.status(200).json({
+//       _id,
+//       username,
+//       email,
+//       token,
+//     });
+//   } else {
+//     res.status(400);
+//     throw new Error("user not found");
+//   }
+// });
+
+// Update user
+exports.updateUser = asyncHandler(async (req, res) => {
+  const { password } = req.body;
+//   const user = await User.findOne({ password });
+
+//   const passwordMatch = await bcrypt.compare(password, user.password);
+
+  if (password) {
+    password = await bcrypt.compare(password)
+    
+  }
+  try {
+    const updateUser = await User.findByIdAndUpdate(
+        req.params.id,
+        {
+          $set: req.body,
+        },
+        {
+          new: true,
+        }
+      );
+      res.status(200).json(updateUser);
+  } catch (error) {
+    res.status(500).json(error);
+  }
 });
