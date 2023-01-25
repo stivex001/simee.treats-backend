@@ -34,9 +34,9 @@ mongoose
 
 //   Routes
 app.use('/api/users',authRoute)
-app.use('/api/v1', productRoute)
-app.use('/api/v1', orderRoute)
-app.use('/api/v1', cartRoute)
+app.use('/api/v1/product', productRoute)
+app.use('/api/v1/order', orderRoute)
+app.use('/api/v1/cart', cartRoute)
 
 // Error Middleware
 app.use(errorHandler);
