@@ -3,7 +3,6 @@ const asyncHandler = require("express-async-handler");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 
-
 // Register User
 
 exports.registerUser = asyncHandler(async (req, res, next) => {
@@ -73,15 +72,19 @@ exports.loginUser = asyncHandler(async (req, res, next) => {
   const passwordMatch = await bcrypt.compare(password, user.password);
 
   if (user && passwordMatch) {
-    const accessToken = jwt.sign({ id: user._id, isAdmin: user.isAdmin }, process.env.JWT_SECRET, { expiresIn: "1d" })
-   
+    const accessToken = jwt.sign(
+      { id: user._id, isAdmin: user.isAdmin },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
     const { _id, username, email, isAdmin } = user;
     res.status(200).json({
       _id,
       username,
       email,
       isAdmin,
-      accessToken
+      accessToken,
     });
   } else {
     res.status(400);
@@ -117,29 +120,3 @@ exports.logout = asyncHandler(async (req, res) => {
 //   }
 // });
 
-// Update user
-exports.updateUser = asyncHandler(async (req, res) => {
-  const { password } = req.body;
-//   const user = await User.findOne({ password });
-
-//   const passwordMatch = await bcrypt.compare(password, user.password);
-
-  if (password) {
-    password = await bcrypt.compare(password)
-    
-  }
-  try {
-    const updateUser = await User.findByIdAndUpdate(
-        req.params.id,
-        {
-          $set: req.body,
-        },
-        {
-          new: true,
-        }
-      );
-      res.status(200).json(updateUser);
-  } catch (error) {
-    res.status(500).json(error);
-  }
-});
