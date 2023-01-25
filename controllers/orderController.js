@@ -1,15 +1,15 @@
-const Cart = require('../models/Cart');
+const Order = require("../models/Order");
 
-// CREATE CART
+// CREATE Order
 
-exports.createCart = async (req, res, next) => {
-  const newCart = await Cart(req.body);
+exports.createOrder = async (req, res, next) => {
+  const newOrder = await new Order(req.body);
 
   try {
-    const createdCart = await newCart.save();
+    const createdOrder = await newOrder.save();
     res.status(201).json({
       status: "successfull",
-      createdCart,
+      createdOrder,
     });
   } catch (error) {
     res.status(500);
@@ -17,11 +17,11 @@ exports.createCart = async (req, res, next) => {
   }
 };
 
-// Update Cart
-exports.updateCart = async (req, res) => {
+// Update Order
+exports.updateOrder = async (req, res) => {
   const id = req.params.id;
   try {
-    const updatedCart = await Cart.findByIdAndUpdate(
+    const updatedOrder = await Order.findByIdAndUpdate(
       id,
       {
         $set: req.body,
@@ -32,8 +32,8 @@ exports.updateCart = async (req, res) => {
     );
     res.status(200).json({
       status: "successfull",
-      message: "Cart updated successfully",
-      updatedCart,
+      message: "Order updated successfully",
+      updatedOrder,
     });
   } catch (error) {
     res.status(500);
@@ -41,44 +41,67 @@ exports.updateCart = async (req, res) => {
   }
 };
 
-// // Delete Cart
+// // Delete Order
 
-exports.deleteCart = async (req, res) => {
+exports.deleteOrder = async (req, res) => {
   try {
     const id = req.params.id;
-    await Cart.findByIdAndDelete(id);
-    res.status(200).json("Cart has been deleted");
+    await Order.findByIdAndDelete(id);
+    res.status(200).json("Order has been deleted");
   } catch (error) {
     res.status(500).json(error.message);
   }
 };
 
-// //  Get User Cart
+// //  Get User Order
 
-exports.getCart = async (req, res) => {
+exports.getOrder = async (req, res) => {
   try {
     const userId = req.params.userId;
-    const cart = await Cart.findOne(userId);
-    if (cart.length === 0) {
-      res.status(404).json("You have no items in your cart");
+    const orders = await Order.find(userId);
+    if (!orders) {
+      res.status(404).json("You have not placed any order yet");
     }
-    res.status(200).json(cart);
+    res.status(200).json(orders);
   } catch (error) {
     res.status(500);
-    throw new Error("Error while fecthing a product: " + error.message);
+    throw new Error("Error while fecthing order: " + error.message);
   }
 };
 
-// //  Get All Cart
-exports.getCarts = async (req, res) => {
+// //  Get All Orders
+exports.getOrders = async (req, res) => {
   try {
-    const cart = await Cart.find()
-    if (cart.lenght === 0) {
-      res.status(404).json({message: "No Items in the cart"})
+    const orders = await Order.find();
+    if (orders.length === 0) {
+      res.status(404).json({ message: "No orders" });
     }
-    res.status(200).json(cart)
+    res.status(200).json(orders);
   } catch (error) {
     res.status(500);
-    throw new Error("Error while fecthing carts: " + error.message);
+    throw new Error("Error while fecthing orders: " + error.message);
+  }
+};
+
+// GET MONTLY INCOME
+
+exports.getIncome = async (req, res, next) => {
+  const date = new Date();
+  const lastMonth = new Date(date.setMonth(date.getMonth() - 1));
+  const previousMonth = new Date(new date().setMonth(lastMonth.getMonth() - 1));
+
+  try {
+    const income = Order.aggregate([
+      { $match: { createdAt: { $gte: previousMonth } } },
+      {
+        $project: { month: { $month: "$createdAt" }, sales: "$amount", },
+      },
+      {
+        $group: {_id: "$month", total: {$sum: "$sales"}}
+      }
+    ]);
+    res.status(200).json(income)
+  } catch (error) {
+    res.status(500).json(error);
   }
 };
