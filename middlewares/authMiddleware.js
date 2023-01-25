@@ -6,8 +6,7 @@ const verifyToken = asyncHandler(async (req, res, next) => {
   try {
     const authHeader = req.headers.token;
     if (!authHeader) {
-      res.status(401);
-      throw new Error("Not Authenticated, Please Login");
+      res.status(401).json("Not Authenticated, Please Login");
     }
     const token = authHeader.split(" ")[1];
     jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
@@ -42,19 +41,32 @@ const verifyToken = asyncHandler(async (req, res, next) => {
   // next()
 });
 
-const verifyTokenAndAuthorization = asyncHandler(async (req, res, next) => {
+const verifyTokenAndAuthorization = async (req, res, next) => {
   try {
     verifyToken(req, res, () => {
       if (req.user.id === req.params.id || req.user.isAdmin) {
         next();
       } else {
-        res.status(403);
-        throw new Error("You are not Authorized");
+        res.status(403).json("You are not Authorized");
       }
     });
   } catch (error) {
     res.status(500).json(error);
   }
-});
+};
 
-module.exports = { verifyToken, verifyTokenAndAuthorization };
+const verifyTokenAndAdmin = async (req, res, next) => {
+    try {
+      verifyToken(req, res, () => {
+        if (req.user.isAdmin) {
+          next();
+        } else {
+          res.status(403).json("You are not Authorized");
+        }
+      });
+    } catch (error) {
+      res.status(500).json(error);
+    }
+  };
+
+module.exports = { verifyToken, verifyTokenAndAuthorization, verifyTokenAndAdmin };
