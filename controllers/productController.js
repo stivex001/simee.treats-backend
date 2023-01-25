@@ -1,108 +1,96 @@
-const Product = require('../models/Products');
-
-
-
+const Product = require("../models/Products");
 
 // CREATE PRODUCTS
 
 exports.createProduct = async (req, res, next) => {
-  const newProduct = await Product(req.body)
+  const newProduct = await Product(req.body);
 
   try {
-    const createdProduct = await newProduct.save()
+    const createdProduct = await newProduct.save();
     res.status(201).json({
-      status: 'successfull',
-      createdProduct
-    })
+      status: "successfull",
+      createdProduct,
+    });
   } catch (error) {
     res.status(500);
     throw new Error("Error while creating a product: " + error.message);
   }
 };
 
-
-
-// exports.getUser = asyncHandler(async (req, res, next) => {
-//   const user = await User.findById(req.user._id);
-
-//   if (user) {
-//     const { _id, username, email } = user;
-//     res.status(200).json({
-//       _id,
-//       username,
-//       email,
-//       token,
-//     });
-//   } else {
-//     res.status(400);
-//     throw new Error("user not found");
-//   }
-// });
-
-
-
 // Update Product
 exports.updateProduct = async (req, res) => {
   const id = req.params.id;
   try {
-    const updatedProduct = await Product.findByIdAndUpdate(id)
+    const updatedProduct = await Product.findByIdAndUpdate(
+      id,
+      {
+        $set: req.body,
+      },
+      {
+        new: true,
+      }
+    );
+    res.status(200).json({
+      status: "successfull",
+      message: "Product updated successfully",
+      updatedProduct,
+    });
   } catch (error) {
-    
+    res.status(500);
+    throw new Error("Error while updating a product: " + error.message);
   }
 };
 
 // Delete Product
 
-// exports.delete = asyncHandler(async (req, res) => {
-//   await Product.findByIdAndDelete(req.params.id);
-//   res.status(200).json("Product has been deleted");
-// });
+exports.deleteProduct = async (req, res) => {
+  try {
+    const id = req.params.id;
+    await Product.findByIdAndDelete(id);
+    res.status(200).json("Product has been deleted");
+  } catch (error) {
+    res.status(500).json(error.message);
+  }
+};
 
-// //  Get Product
-// exports.getUser = asyncHandler(async (req, res) => {
-//   const user = await Product.findById(req.params.id);
-//   if (!user) {
-//     res.status(404).json("Product not found");
-//   }
-//   const { _id, username, email, isAdmin } = user;
-//   res.status(200).json({
-//     _id,
-//     username,
-//     email,
-//     isAdmin,
-//   });
-// });
+//  Get Product
+
+exports.getProduct = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const product = await Product.findById(id);
+    if (!product) {
+      res.status(404).json("Product not found");
+    }
+    res.status(200).json(product);
+  } catch (error) {
+    res.status(500);
+    throw new Error("Error while fecthing a product: " + error.message);
+  }
+};
 
 //  Get All Product
-// exports.getUsers = asyncHandler(async (req, res) => {
-//   const query = req.query.latest;
-//   const user = query
-//     ? await Product.find().sort({ _id: -1 }).limit(5)
-//     : await Product.find();
-//   const { password, ...others } = user;
-//   res.status(200).json({
-//     ...others,
-//   });
-// });
+exports.getProducts = async (req, res) => {
+  const queryNew = req.query.new;
+  const queryCategory = req.query.category;
+  try {
+    let products;
 
-// Get Product Stats
-// exports.getUserStats = asyncHandler(async (req, res) => {
-//   const date = new Date();
-//   const lastYear = new Date(date.setFullYear(date.getFullYear() - 1));
+    if (queryNew) {
+      products = await Product.find().sort({ createdAt: -1 }).limit(5);
+    } else if (queryCategory) {
+      products = await Product.find({
+        categories: {
+          $in: [queryCategory],
+        },
+      });
+    } else {
+      products = await Product.find();
+    }
 
-//   const data = await Product.aggregate([
-//     { $match: { createdAt: { $gte: lastYear } } },
-//     {
-//       $project: {
-//         month: { $month: "$createdAt" },
-//       },
-//     },
-//     {
-//       $group: {
-//         _id: "$month",
-//         total: { $sum: 1 },
-//       },
-//     },
-//   ]);
-//   res.status(200).json(data);
-// })
+    res.status(200).json(products);
+  } catch (error) {
+    res.status(500);
+    throw new Error("Error while fecthing  products: " + error.message);
+  }
+};
