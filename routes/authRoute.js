@@ -18,6 +18,8 @@ router.post('/register', authController.registerUser)
 
 router.post('/login', authController.loginUser)
 
+router.post('/forgotpassword', authController.forgotPassword)
+
 router.put('/:id',verifyTokenAndAuthorization, userController.updateUser)
 
 router.delete('/:id', verifyTokenAndAuthorization, userController.delete)

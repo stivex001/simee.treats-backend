@@ -2,6 +2,8 @@ const User = require("../models/User");
 const asyncHandler = require("express-async-handler");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
+const crypto = require('crypto');
+const Token = require("../models/token");
 
 // Register User
 
@@ -103,20 +105,48 @@ exports.logout = asyncHandler(async (req, res) => {
   return res.status(200).json({ message: "You've logged out successfully " });
 });
 
-// exports.getUser = asyncHandler(async (req, res, next) => {
-//   const user = await User.findById(req.user._id);
+exports.forgotPassword = asyncHandler(async (req, res, next) => {
+  const {email} = req.body
+  const user = await User.findOne({email})
 
-//   if (user) {
-//     const { _id, username, email } = user;
-//     res.status(200).json({
-//       _id,
-//       username,
-//       email,
-//       token,
-//     });
-//   } else {
-//     res.status(400);
-//     throw new Error("user not found");
-//   }
-// });
+  if (!user) {
+    res.status(404)
+    throw new Error("User does not exists")
+  }
+
+  // Create a reset token
+  let resetToken = crypto.randomBytes(32).toString('hex') + user._id
+
+// Hash token before saving to DB
+const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex')
+
+// save token to DB
+ await new Token({
+  userId: user._id,
+  token: hashedToken,
+  createdAt: Date.now(),
+  expiresAt: Date.now() + 30 * (60 * 1000) // Thirty minutes
+}).save()
+
+// Construct Reset Url
+const resetUrl = `${process.env.FRONTEND_URL}/resetpassword/${resetToken}`
+
+// Reset Email
+const message = `
+<h2>Hello ${user.username}</h2>
+<p>Please use the url below to reset your password</p>
+<p>This reset link is valid for ony 30minutes</p>
+
+<a href=${resetUrl} clicktracking=off>${resetToken}</a>
+
+<p>Regards...</p>
+
+<p>Simee.treats Team</p>
+
+
+`
+
+  res.send('forgotpassword')
+
+});
 
