@@ -7,6 +7,7 @@ const orderRoute = require('./routes/orderRoute')
 const cartRoute = require('./routes/cartRoute')
 const errorHandler = require("./middlewares/error")
 const cookieParser = require('cookie-parser')
+const cors = require('cors')
 
 
 // initialize dotenv
@@ -16,6 +17,7 @@ dotenv.config();
 app.use(express.json())
 app.use(express.urlencoded({ extended: false}))
 app.use(cookieParser())
+app.use(cors())
 
 // connecting to Database
 const mongoose = require("mongoose");
