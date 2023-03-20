@@ -65,7 +65,7 @@ exports.loginUser = asyncHandler(async (req, res, next) => {
   }
 
   //  check if user exists
-  const user = await User.findOne({ email });
+  const user = await User.findOne({ username });
   if (!user) {
     res.status(400);
     throw new Error("oops! User not found");
